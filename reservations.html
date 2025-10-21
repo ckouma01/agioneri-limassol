@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Κρατήσεις – Αγιόνερι Live</title>
+<link rel="icon" href="images/logo-agioneri.png">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+:root{ --gold:#d4af37; } body{ background:#111; color:#eaeaea; }
+.navbar{ background:#000 } .nav-link{ color:#e6e6e6!important; font-weight:600 } .nav-link:hover,.nav-link.active{ color:var(--gold)!important }
+footer{ background:#000; color:#cfcfcf; }
+.btn-gold{ background:var(--gold); border:none; color:#000; font-weight:700; }
+.form-control, .form-select{ background:#151515; border-color:#2a2a2a; color:#eaeaea; }
+/* ===== Agioneri Dark Theme Contrast Fixes ===== */
+
+/* Base text on dark background */
+html, body { color: #e9eaed; }
+
+/* Headings: brighter for readability */
+h1, h2, h3, h4, h5, h6 { color: #f4f5f7; }
+
+/* Bootstrap muted text on dark theme */
+.text-muted, .card .text-muted, small, .form-text {
+  color: #bfc4cc !important;   /* was ~#6c757d, too dark */
+}
+
+/* Card content on dark surfaces */
+.card.ag, .ag-card, .card.bg-dark, .card {
+  color: #e9eaed;
+}
+
+/* Labels/badges on dark – ensure readable */
+.badge, .badge.bg-dark, .badge-day {
+  color: #fff; 
+  border: 1px solid #d4af37;
+  background-color: #000;
+}
+
+/* Buttons on gold */
+.btn-gold { color: #111; font-weight: 800; }
+.btn-outline-light { color: #f4f5f7; border-color: #cfd2d8; }
+.btn-outline-light:hover { background:#f4f5f7; color:#111; }
+
+/* Forms on dark */
+.form-control, .form-select {
+  color:#e9eaed; background:#151515; border-color:#2a2a2a;
+}
+.form-control::placeholder { color:#aab0b8; }
+
+/* Navbar links a touch brighter (not pure white) */
+.navbar .nav-link { color: #e7e9ee !important; }
+.navbar .nav-link.active, .navbar .nav-link:hover { color: #d4af37 !important; }
+
+/* HERO: stronger overlay & guaranteed white text */
+.hero { color:#fff; }
+.hero::before {
+  background: rgba(0,0,0,.55);    /* was .2–.45; make it a bit darker */
+  backdrop-filter: blur(1px);
+}
+/* If you use a translucent hero card, make its text bright */
+.hero .card { color:#ffffff; border-color: rgba(212,175,55,.45); }
+
+/* Titles inside cards */
+.card .card-title, .card h4, .card h5 { color:#f2f3f6; }
+
+</style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="index.html"><img src="images/logo-agioneri.png" style="height:60px" alt=""></a>
+    <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
+    <div id="nav" class="collapse navbar-collapse justify-content-center">
+      <ul class="navbar-nav">
+        <li class="nav-item"><a class="nav-link" href="index.html">ΚΕΝΤΡΙΚΗ</a></li>
+        <li class="nav-item"><a class="nav-link" href="program.html">ΠΡΟΓΡΑΜΜΑ</a></li>
+        <li class="nav-item"><a class="nav-link" href="artists.html">ΚΑΛΛΙΤΕΧΝΕΣ</a></li>
+        <li class="nav-item"><a class="nav-link" href="menu.html">MENU</a></li>
+        <li class="nav-item"><a class="nav-link" href="gallery.html">MEDIA</a></li>
+        <li class="nav-item"><a class="nav-link" href="news.html">ΝΕΑ</a></li>
+        <li class="nav-item"><a class="nav-link" href="venue.html">ΧΩΡΟΣ</a></li>
+        <li class="nav-item"><a class="nav-link" href="about.html">ΣΧΕΤΙΚΑ</a></li>
+        <li class="nav-item"><a class="nav-link" href="contact.html">ΕΠΙΚΟΙΝΩΝΙΑ</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<main class="container" style="padding-top:110px; max-width:900px">
+  <h1 class="fw-bold mb-3">Κρατήσεις</h1>
+  <p class="text-muted">Κάντε κράτηση τραπεζιού—θα επικοινωνήσουμε για επιβεβαίωση. Για άμεση εξυπηρέτηση καλέστε <a href="tel:+35777770065">77770665</a>.</p>
+
+  <!-- Replace action with Formspree/Backend when ready -->
+  <form action="https://formspree.io/f/your-form-id" method="POST" class="p-4 border rounded">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Όνομα</label>
+        <input name="name" type="text" class="form-control" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Τηλέφωνο</label>
+        <input name="phone" type="tel" class="form-control" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Άτομα</label>
+        <input name="guests" type="number" min="1" class="form-control" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Ημερομηνία</label>
+        <input name="date" type="date" class="form-control" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Ώρα</label>
+        <input name="time" type="time" class="form-control" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Προτίμηση</label>
+        <select name="preference" class="form-select">
+          <option>Κοντά στη σκηνή</option>
+          <option>Ήσυχο σημείο</option>
+          <option>Καπνιστών</option>
+          <option>Μη καπνιστών</option>
+        </select>
+      </div>
+      <div class="col-12">
+        <label class="form-label">Σχόλια</label>
+        <textarea name="notes" class="form-control" rows="3" placeholder="Γενέθλια, ειδικές ανάγκες κ.λπ."></textarea>
+      </div>
+    </div>
+    <button class="btn btn-gold mt-3">Αποστολή</button>
+    <div class="d-flex gap-2 mt-3">
+      <a class="btn btn-outline-light" href="tel:+35777770065">Κλήση</a>
+      <a class="btn btn-outline-light" href="https://wa.me/35795956000" target="_blank">WhatsApp</a>
+      <a class="btn btn-outline-light" href="https://www.instagram.com/agioneri_limassol" target="_blank">Instagram DM</a>
+    </div>
+  </form>
+</main>
+
+<footer class="py-4 mt-5 text-center">
+  <div class="container small">© 2025 Agioneri Live • KoumasWeb</div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

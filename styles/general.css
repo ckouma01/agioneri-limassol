@@ -1,0 +1,95 @@
+/* Mobile-first */
+.hero{
+  margin-top:70px;                 /* space for fixed navbar */
+  position:relative;
+  min-height:80vh;                 /* keep it tall */
+  display:flex; align-items:center; justify-content:center;
+  color:#fff; overflow:hidden;
+
+  /* IMAGE */
+  background-image:url("../images/Screenshot\ 2025-10-21\ 181310.png");
+  background-size:cover;
+  background-repeat:no-repeat;
+  background-position:center 43%;
+}
+
+/* Dark overlay + optional blur lives here, not on .hero */
+.hero::before{
+  content:"";
+  position:absolute; inset:0;
+  background:rgba(0,0,0,.45);      /* adjust darkness */
+  backdrop-filter:blur(1px);       /* optional */
+  z-index:1;
+}
+
+/* keep content above overlay */
+.hero *{ position:relative; z-index:2; }
+
+/* Desktop tweaks */
+@media (min-width:992px){
+  .hero{
+    min-height:85vh;               /* don't use height:auto */
+    background-position:center 43%;
+  }
+}
+
+/* Highlights spacer below hero (optional) */
+#highlightsWrap{ margin-top:2rem; }
+@media (min-width:992px){
+  #highlightsWrap{ margin-top:6rem; }
+}
+
+/* ===== Agioneri Dark Theme Contrast Fixes ===== */
+
+/* Base text on dark background */
+html, body { color: #e9eaed; }
+
+/* Headings: brighter for readability */
+h1, h2, h3, h4, h5, h6 { color: #f4f5f7; }
+
+/* Bootstrap muted text on dark theme */
+.text-muted, .card .text-muted, small, .form-text {
+  color: #bfc4cc !important;   /* was ~#6c757d, too dark */
+}
+
+/* Card content on dark surfaces */
+.card.ag, .ag-card, .card.bg-dark, .card {
+  color: #e9eaed;
+}
+
+/* Labels/badges on dark – ensure readable */
+.badge, .badge.bg-dark, .badge-day {
+  color: #fff; 
+  border: 1px solid #d4af37;
+  background-color: #000;
+}
+
+/* Buttons on gold */
+.btn-gold { color: #111; font-weight: 800; }
+.btn-outline-light { color: #f4f5f7; border-color: #cfd2d8; }
+.btn-outline-light:hover { background:#f4f5f7; color:#111; }
+
+/* Forms on dark */
+.form-control, .form-select {
+  color:#e9eaed; background:#151515; border-color:#2a2a2a;
+}
+.form-control::placeholder { color:#aab0b8; }
+
+/* Navbar links a touch brighter (not pure white) */
+.navbar .nav-link { color: #e7e9ee !important; }
+.navbar .nav-link.active, .navbar .nav-link:hover { color: #d4af37 !important; }
+
+/* HERO: stronger overlay & guaranteed white text */
+.hero { color:#fff; }
+.hero::before {
+  background: rgba(0,0,0,.55);    /* was .2–.45; make it a bit darker */
+  backdrop-filter: blur(1px);
+}
+/* If you use a translucent hero card, make its text bright */
+.hero .card { color:#ffffff; border-color: rgba(212,175,55,.45); }
+
+/* Titles inside cards */
+.card .card-title, .card h4, .card h5 { color:#f2f3f6; }
+
+
+
