@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agioneri • Admin Demo</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  :root { --gold:#d4af37; --bg:#0b0b0b; --muted:#b6b6b6; --chair-size:28px; } /* chair size scales via media queries */
+  body{ background:#111; color:#eaeaea; }
+  .navbar{ background:#000; }
+  .btn-gold{ background:var(--gold); border:none; color:#000; font-weight:700; }
+  .btn-gold:hover{ filter:brightness(.95); color:#000; }
+  .card{ background:#141414; border:1px solid #1f1f1f; }
+  .card:hover{ border-color:var(--gold); transition:.2s; }
+  .form-control, .form-select{ background:#151515; color:#e9eaed; border-color:#2a2a2a; }
+  .form-control::placeholder{ color:#aab0b8; }
+  .table-dark{ --bs-table-bg:#111; --bs-table-striped-bg:#151515; }
+  .pill{ border:1px solid #2a2a2a; background:#0c0c0c; border-radius:999px; padding:6px 10px; }
+  .status-badge.confirmed{ background:#198754; }
+  .status-badge.pending{ background:#6c757d; }
+  .status-badge.cancelled{ background:#dc3545; }
+
+  /* Floor map */
+  #floorWrap{ background:#0f0f0f; border:1px solid #272727; border-radius:14px; padding:18px; overflow:visible; }
+  #legend .legend-dot{ width:14px; height:14px; border-radius:50%; display:inline-block; vertical-align:middle; margin-right:6px; }
+  .legend-available{ background:var(--gold); }
+  .legend-booked{ background:#555; }
+
+  /* Responsive GRID */
+  .map{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); /* fluid columns */
+    gap:12px;
+    padding:10px 0;
+    overflow:visible;
+  }
+  .table-seat{
+    position:relative;
+    border-radius:12px;
+    padding:16px 0;
+    margin:22px;
+    background:var(--gold);
+    color:#111;
+    text-align:center;
+    font-weight:800;
+    cursor:pointer;
+    box-shadow:0 0 0 1px rgba(0,0,0,.15) inset;
+    transition: transform .06s ease, box-shadow .2s ease;
+    overflow:visible;
+    z-index:1;
+  }
+  .table-seat:hover{ transform: translateY(-2px); box-shadow:0 6px 18px rgba(0,0,0,.35); }
+  .table-seat.small{ padding:12px 0; font-weight:700; }
+  .table-seat.booked{
+    background:#3f3f3f; color:#cfcfcf;
+    box-shadow:0 0 0 1px rgba(255,255,255,.08) inset;
+  }
+
+  /* Chairs (use CSS var for size so we can scale at breakpoints) */
+  .chair{
+    position:absolute;
+    width:var(--chair-size);
+    height:var(--chair-size);
+    background-image:url('/agioneri_limassol/images/chair.png'); /* <-- your chair image */
+    background-repeat:no-repeat;
+    background-position:center;
+    background-size:cover;
+    opacity:.98;
+    pointer-events:none;
+    z-index:3;
+    filter:drop-shadow(0 0 2px rgba(0,0,0,.65));
+    border-radius:3px;
+  }
+  .table-seat.booked .chair{ filter:grayscale(1) opacity(.7) drop-shadow(0 0 1px rgba(0,0,0,.5)); }
+
+  /* Breakpoints */
+  @media (max-width: 992px){
+    :root{ --chair-size:22px; }
+    .map{ gap:10px; }
+    .table-seat{ margin:18px; padding:14px 0; }
+  }
+  @media (max-width: 576px){
+    :root{ --chair-size:18px; }
+    .map{ gap:8px; grid-template-columns: repeat(auto-fit, minmax(78px, 1fr)); }
+    .table-seat{ margin:14px; padding:12px 0; }
+  }
+
+  /* Dark theme contrast helpers */
+  h1,h2,h3,h4,h5,h6{ color:#f4f5f7; }
+  .text-muted, .card .text-muted, small, .form-text{ color:#bfc4cc !important; }
+  .badge, .badge.bg-dark, .badge-day{ color:#fff; border:1px solid #d4af37; background-color:#000; }
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark border-bottom border-secondary sticky-top">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="#"><span class="text-warning">Agioneri</span> Admin</a>
+    <div class="ms-auto d-flex align-items-center gap-2">
+      <span class="pill small text-light"><i class="bi bi-calendar3 me-1"></i> Demo</span>
+      <button class="btn btn-sm btn-outline-light" id="btnResetDemo"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset Demo</button>
+    </div>
+  </div>
+</nav>
+
+<main class="container-fluid py-4">
+  <div class="row g-3 align-items-end mb-2">
+    <div class="col-12 col-md-3">
+      <label class="form-label">Ημερομηνία</label>
+      <input type="date" class="form-control" id="nightDate">
+    </div>
+    <div class="col-12 col-md-9 text-md-end">
+      <div class="d-inline-flex align-items-center gap-2 flex-wrap">
+        <span id="legend" class="pill text-muted small">
+          <span class="legend-dot legend-available"></span> Διαθέσιμο
+          &nbsp;&nbsp;
+          <span class="legend-dot legend-booked"></span> Κρατημένο
+        </span>
+        <button class="btn btn-gold" id="btnNewRes"><i class="bi bi-plus-lg me-1"></i> Νέα Κράτηση</button>
+        <button class="btn btn-outline-light" id="btnExport"><i class="bi bi-download me-1"></i> Export (CSV)</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12 col-xl-7">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h5 class="mb-0"><i class="bi bi-grid-3x3-gap-fill me-2 text-warning"></i>Χάρτης Τραπεζιών (Άποψη από ψηλά)</h5>
+          <span class="text-muted small">Κλικ σε τραπέζι για λεπτομέρειες</span>
+        </div>
+        <div class="card-body" id="floorWrap">
+          <div id="floorMeta" class="mb-2 small text-muted"></div>
+          <div class="map" id="tableMap"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-xl-5">
+      <div class="card h-100">
+        <div class="card-header">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <h5 class="mb-0"><i class="bi bi-list-ul me-2 text-warning"></i>Κρατήσεις Βραδιάς</h5>
+            <div class="input-group input-group-sm" style="max-width:360px;">
+              <span class="input-group-text bg-dark border-secondary text-muted"><i class="bi bi-search"></i></span>
+              <input type="text" id="searchBox" class="form-control" placeholder="Αναζήτηση: όνομα, τηλ., email, ώρα, τραπέζι, status…">
+            </div>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-dark table-striped table-hover align-middle mb-0" id="resTable">
+              <thead class="small text-uppercase">
+                <tr>
+                  <th>Ώρα</th>
+                  <th>Όνομα</th>
+                  <th>Τηλέφωνο</th>
+                  <th>Email</th>
+                  <th class="text-center">Άτομα</th>
+                  <th class="text-center">Τραπ.</th>
+                  <th>Status</th>
+                  <th class="text-end">Ενέργειες</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-footer text-muted small">
+          <span id="countLabel">0 κρατήσεις</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Reservation Modal -->
+<div class="modal fade" id="resModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content bg-dark text-light">
+      <div class="modal-header">
+        <h5 class="modal-title"><span id="modalTitle">Κράτηση</span></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="resForm" class="modal-body">
+        <div class="row g-3">
+          <div class="col-6 col-md-3">
+            <label class="form-label">Τραπέζι</label>
+            <input class="form-control" name="table" id="fTable" readonly>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label">Ώρα</label>
+            <input class="form-control" name="time" id="fTime" type="time" value="21:00" required>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label">Κατάσταση</label>
+            <select class="form-select" id="fStatus" name="status">
+              <option value="pending">Αναμονή</option>
+              <option value="confirmed">Επιβεβαιωμένο</option>
+              <option value="cancelled">Ακυρωμένο</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label">Ονοματεπώνυμο</label>
+            <input class="form-control" name="name" id="fName" placeholder="π.χ. Γιώργος Παπαδόπουλος" required>
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="form-label">Τηλέφωνο</label>
+            <input class="form-control" name="phone" id="fPhone" placeholder="99xxxxxx" required>
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="form-label">Email</label>
+            <input class="form-control" name="email" id="fEmail" type="email" placeholder="example@mail.com">
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="form-label">Άτομα</label>
+            <input class="form-control" name="guests" id="fGuests" type="number" min="1" value="4" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Σχόλια</label>
+            <textarea class="form-control" name="notes" id="fNotes" rows="2" placeholder="Ειδικές απαιτήσεις, γενέθλια κ.λπ. (demo)"></textarea>
+          </div>
+        </div>
+        <input type="hidden" id="fId">
+      </form>
+      <div class="modal-footer">
+        <button class="btn btn-outline-light" data-bs-dismiss="modal">Κλείσιμο</button>
+        <button class="btn btn-danger d-none" id="btnCancelBooking"><i class="bi bi-x-circle me-1"></i>Ακύρωση</button>
+        <button class="btn btn-gold" id="btnSaveBooking"><i class="bi bi-check2-circle me-1"></i>Αποθήκευση</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  /* ===== Demo data ===== */
+  const TOTAL_TABLES = 24;
+  const seatsMap = {
+    1:6, 2:6, 3:6, 4:6, 5:6, 6:4, 7:4, 8:4,
+    9:4,10:4,11:4,12:4,13:4,14:4,15:4,16:4,
+    17:2,18:2,19:2,20:2,21:4,22:4,23:4,24:4
+  };
+
+  let state = { date: todayISO(), reservations: [] };
+
+  function todayISO(){
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function seedNight(dateISO){
+    const r = (min,max)=>Math.floor(Math.random()*(max-min+1))+min;
+    const names = ["Γιώργος","Μαρία","Ανδρέας","Κωνσταντίνος","Άννα","Χριστίνα","Εύη","Πέτρος","Έλενα","Στέλιος","Μάριος"];
+    const last = ["Παπαδόπουλος","Ιωάννου","Γεωργίου","Μιχαήλ","Χαραλάμπους","Ηλία","Σαββίδης","Στυλιανού"];
+    const count = r(6,12), taken = new Set(), res = [];
+    for(let i=0;i<count;i++){
+      let t; do{ t=r(1,TOTAL_TABLES);} while(taken.has(t)); taken.add(t);
+      const name = `${names[r(0,names.length-1)]} ${last[r(0,last.length-1)]}`;
+      const phone = `96${r(100000,999999)}`;
+      const email = `demo${r(100,999)}@mail.com`;
+      const guests = Math.min(seatsMap[t]||4, r(2,6));
+      const time = `${r(21,23)}:${["00","15","30","45"][r(0,3)]}`;
+      const status = ["pending","confirmed"][r(0,1)];
+      res.push({ id: crypto.randomUUID(), date:dateISO, table:t, time, name, phone, email, guests, notes:"—", status });
+    }
+    state.reservations = res;
+  }
+
+  /* ===== Chairs aligned around rectangle (responsive, facing inward) ===== */
+function placeChairs(el, n){
+  const cs = getComputedStyle(document.documentElement).getPropertyValue('--chair-size').trim();
+  const CHAIR_SIZE = parseInt(cs || '24', 10);
+
+  el.querySelectorAll('.chair').forEach(c => c.remove());
+  if (!n || n < 1) return;
+
+  requestAnimationFrame(() => {
+    const w = el.offsetWidth  || 80;
+    const h = el.offsetHeight || 40;
+
+    const minSide   = Math.min(w, h);
+    const marginOut = Math.max(8, minSide * 0.22 - CHAIR_SIZE/2); // how far OUTSIDE the table
+    const cornerGap = Math.max(8, minSide * 0.18);                // avoid corners
+
+    const Ltop    = Math.max(0, w - 2*cornerGap);
+    const Lright  = Math.max(0, h - 2*cornerGap);
+    const Lbottom = Ltop;
+    const Lleft   = Lright;
+
+    const per     = Ltop + Lright + Lbottom + Lleft;
+    if (per <= 0) return;
+
+    const spacing = per / n;
+    const start   = spacing / 2;
+
+    const ORIENT_OFFSET = 0; // tweak if your PNG isn't "facing up" by default
+
+    for (let i = 0; i < n; i++){
+      let t = start + i * spacing;
+      let x, y, rot;
+
+      if (t < Ltop) {                           // TOP: left -> right
+        x = cornerGap + t;   y = -marginOut;
+        rot = Math.PI;                           // face DOWN
+      } else if ((t -= Ltop) < Lright) {        // RIGHT: top -> bottom
+        x = w + marginOut;   y = cornerGap + t;
+        rot = -Math.PI / 2;                      // face LEFT
+      } else if ((t -= Lright) < Lbottom) {     // BOTTOM: right -> left
+        x = w - cornerGap - t; y = h + marginOut;
+        rot = 0;                                 // face UP
+      } else {                                  // LEFT: bottom -> top
+        t -= Lbottom;
+        x = -marginOut;       y = h - cornerGap - t;
+        rot = Math.PI / 2;                       // face RIGHT
+      }
+
+      const chair = document.createElement('span');
+      chair.className = 'chair';
+      chair.style.left = `${x - CHAIR_SIZE/2}px`;
+      chair.style.top  = `${y - CHAIR_SIZE/2}px`;
+      chair.style.transform = `rotate(${rot + ORIENT_OFFSET + Math.PI}rad)`;
+      el.appendChild(chair);
+    }
+  });
+}
+
+  /* ===== Rendering ===== */
+  function renderFloor(){
+    const wrap = document.getElementById('tableMap');
+    wrap.innerHTML = "";
+    const bookedSet = new Set(state.reservations.filter(r=>r.status!=="cancelled").map(r=>r.table));
+
+    for(let i=1;i<=TOTAL_TABLES;i++){
+      const booked = bookedSet.has(i);
+      const div = document.createElement('div');
+      div.className = `table-seat ${seatsMap[i]<=3?"small":""} ${booked?"booked":""}`;
+      div.dataset.table = i;
+      div.innerHTML = `<div>${i}</div>`;
+      div.title = booked ? `Τραπέζι ${i} • Κρατημένο` : `Τραπέζι ${i} • Διαθέσιμο`;
+      div.addEventListener('click',()=>openTableModal(i, booked));
+      wrap.appendChild(div);
+      placeChairs(div, seatsMap[i] || 4);
+    }
+
+    const booked = state.reservations.filter(r=>r.status!=="cancelled").length;
+    document.getElementById('floorMeta').textContent =
+      `Σύνολο τραπεζιών: ${TOTAL_TABLES} • Κρατημένα: ${booked} • Διαθέσιμα: ${TOTAL_TABLES-booked}`;
+  }
+
+  function renderList(){
+    const tbody = document.querySelector('#resTable tbody');
+    const q = document.getElementById('searchBox').value.trim().toLowerCase();
+    const rows = state.reservations
+      .filter(r=>r.status!=="cancelled")
+      .filter(r=>{
+        const s = `${r.name} ${r.phone} ${r.email} ${r.time} ${r.table} ${r.status}`.toLowerCase();
+        return s.includes(q);
+      })
+      .sort((a,b)=>a.time.localeCompare(b.time))
+      .map(r=>{
+        const badge = r.status==="confirmed" ? "confirmed" : r.status==="cancelled" ? "cancelled" : "pending";
+        return `<tr>
+          <td><span class="pill small">${r.time}</span></td>
+          <td>${r.name}</td>
+          <td>${r.phone}</td>
+          <td>${r.email||"—"}</td>
+          <td class="text-center">${r.guests}</td>
+          <td class="text-center"><span class="badge bg-secondary">${r.table}</span></td>
+          <td><span class="badge status-badge ${badge}">${statusLabel(r.status)}</span></td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-light me-1" onclick="editRes('${r.id}')"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="cancelRes('${r.id}')"><i class="bi bi-x-circle"></i></button>
+          </td>
+        </tr>`;
+      }).join("");
+    tbody.innerHTML = rows || `<tr><td colspan="8" class="text-center text-muted py-4">Δεν υπάρχουν κρατήσεις για τη βραδιά.</td></tr>`;
+    document.getElementById('countLabel').textContent =
+      `${state.reservations.filter(r=>r.status!=="cancelled").length} κρατήσεις`;
+  }
+
+  function statusLabel(s){ return s==="confirmed"?"Επιβεβαιωμένο":s==="cancelled"?"Ακυρωμένο":"Αναμονή"; }
+
+  /* ===== Modal logic ===== */
+  const resModal = new bootstrap.Modal(document.getElementById('resModal'));
+
+  function openTableModal(tableNo, isBooked){
+    const title = document.getElementById('modalTitle');
+    const btnCancel = document.getElementById('btnCancelBooking');
+    document.getElementById('resForm').reset();
+    document.getElementById('fId').value = "";
+    document.getElementById('fTable').value = tableNo;
+    document.getElementById('fStatus').value = isBooked ? "confirmed" : "pending";
+
+    if(isBooked){
+      const r = state.reservations.find(x=>x.table===tableNo && x.status!=="cancelled");
+      if(r){
+        document.getElementById('fId').value = r.id;
+        document.getElementById('fTime').value = r.time;
+        document.getElementById('fName').value = r.name;
+        document.getElementById('fPhone').value = r.phone;
+        document.getElementById('fEmail').value = r.email||"";
+        document.getElementById('fGuests').value = r.guests;
+        document.getElementById('fNotes').value = r.notes||"";
+      }
+      title.innerHTML = `Τραπέζι ${tableNo} • <span class="text-success">Κρατημένο</span>`;
+      btnCancel.classList.remove('d-none');
+    }else{
+      title.textContent = `Νέα Κράτηση – Τραπέζι ${tableNo}`;
+      btnCancel.classList.add('d-none');
+    }
+    resModal.show();
+  }
+
+  window.editRes = function(id){
+    const r = state.reservations.find(x=>x.id===id);
+    if(!r) return;
+    document.getElementById('modalTitle').textContent = `Επεξεργασία Κράτησης – Τραπέζι ${r.table}`;
+    document.getElementById('fId').value = r.id;
+    document.getElementById('fTable').value = r.table;
+    document.getElementById('fTime').value = r.time;
+    document.getElementById('fName').value = r.name;
+    document.getElementById('fPhone').value = r.phone;
+    document.getElementById('fEmail').value = r.email||"";
+    document.getElementById('fGuests').value = r.guests;
+    document.getElementById('fNotes').value = r.notes||"";
+    document.getElementById('fStatus').value = r.status;
+    document.getElementById('btnCancelBooking').classList.remove('d-none');
+    resModal.show();
+  }
+
+  window.cancelRes = function(id){
+    const r = state.reservations.find(x=>x.id===id);
+    if(!r) return;
+    if(!confirm(`Ακύρωση κράτησης για το τραπέζι ${r.table}; ${r.name}; ${r.time}; ${r.guests} άτομα;`)) return;
+    r.status = "cancelled";
+    renderFloor(); renderList();
+  }
+
+  document.getElementById('btnSaveBooking').addEventListener('click', ()=>{
+    const id = document.getElementById('fId').value || crypto.randomUUID();
+    const payload = {
+      id,
+      date: state.date,
+      table: Number(document.getElementById('fTable').value),
+      time: document.getElementById('fTime').value,
+      name: document.getElementById('fName').value.trim(),
+      phone: document.getElementById('fPhone').value.trim(),
+      email: document.getElementById('fEmail').value.trim(),
+      guests: Number(document.getElementById('fGuests').value),
+      notes: document.getElementById('fNotes').value.trim(),
+      status: document.getElementById('fStatus').value
+    };
+    if(!payload.table){ alert("Επιλέξτε τραπέζι ή εισάγετε αριθμό τραπεζιού."); return; }
+    if(!payload.name || !payload.phone || !payload.time){
+      alert("Συμπληρώστε όνομα, τηλέφωνο και ώρα."); return;
+    }
+
+    const idx = state.reservations.findIndex(r=>r.id===id);
+    if(idx>-1){
+      state.reservations[idx] = payload;
+    } else {
+      const exists = state.reservations.find(r=>r.table===payload.table && r.status!=="cancelled");
+      if(exists){
+        if(!confirm("Υπάρχει ήδη κράτηση σε αυτό το τραπέζι. Θέλετε να την αντικαταστήσετε;")) return;
+        exists.status = "cancelled";
+      }
+      state.reservations.push(payload);
+    }
+    resModal.hide();
+    renderFloor(); renderList();
+  });
+
+  document.getElementById('btnCancelBooking').addEventListener('click', ()=>{
+    const id = document.getElementById('fId').value;
+    if(!id) return;
+    window.cancelRes(id);
+    resModal.hide();
+  });
+
+  document.getElementById('btnNewRes').addEventListener('click', ()=>{
+    document.getElementById('resForm').reset();
+    document.getElementById('fId').value = "";
+    document.getElementById('fTable').value = "";
+    document.getElementById('fStatus').value = "pending";
+    document.getElementById('modalTitle').textContent = "Νέα Κράτηση (χωρίς τραπέζι)";
+    document.getElementById('btnCancelBooking').classList.add('d-none');
+    resModal.show();
+  });
+
+  document.getElementById('searchBox').addEventListener('input', renderList);
+
+  const dateInput = document.getElementById('nightDate');
+  dateInput.value = state.date;
+  dateInput.addEventListener('change', ()=>{
+    state.date = dateInput.value || todayISO();
+    seedNight(state.date);
+    renderFloor(); renderList();
+  });
+
+  document.getElementById('btnExport').addEventListener('click', ()=>{
+    const header = ["date","time","name","phone","email","guests","table","status","notes"];
+    const filtered = state.reservations.filter(r=>r.status!=="cancelled");
+    const rows = filtered.map(r => header.map(k => (r[k] ?? "")).join(","));
+    const csv = [header.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `agioneri_${state.date}_reservations.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('btnResetDemo').addEventListener('click', ()=>{
+    seedNight(state.date);
+    renderFloor(); renderList();
+  });
+
+  /* Re-render on resize so chairs stay aligned at breakpoints */
+  let resizeTimer;
+  window.addEventListener('resize', ()=>{
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(()=>{ renderFloor(); renderList(); }, 120);
+  });
+
+  // Init
+  seedNight(state.date);
+  renderFloor(); renderList();
+</script>
+</body>
+</html>
